@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contador de Truco</title>
+    <!-- Incluye Tailwind CSS para un diseño moderno y responsivo -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Importa la fuente 'Inter' de Google Fonts para una mejor tipografía -->
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Estilos personalizados para los botones de puntuación */
+        .score-btn {
+            background-color: #ffffff; /* Fondo blanco */
+            font-weight: 700; /* Negrita */
+            padding: 0.75rem 1rem; /* Padding interno */
+            border-radius: 0.75rem; /* Bordes redondeados */
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* Sombra */
+            transition: all 0.3s ease-in-out; /* Transición suave para efectos */
+        }
+        .score-btn:hover {
+            transform: scale(1.05); /* Efecto de escala al pasar el mouse/tocar */
+            box-shadow: 0 6px 8px rgba(0, 0, 0, 0.15); /* Sombra más pronunciada */
+        }
+        .score-btn.bg-red-500:hover {
+            background-color: #dc2626; /* Rojo más oscuro al pasar el mouse */
+        }
+        .score-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body class="bg-gradient-to-br from-green-700 to-blue-900 min-h-screen flex items-center justify-center p-4">
+    <!-- Contenedor principal de la aplicación -->
+    <div class="bg-white rounded-3xl shadow-2xl p-6 md:p-10 w-full max-w-4xl flex flex-col items-center space-y-8">
+        <h1 class="text-4xl md:text-5xl font-extrabold text-gray-800 mb-4 text-center">Contador de Truco Argentino</h1>
+
+        <!-- Área para mostrar mensajes de estado del juego (ej. "¡Nosotros ganaron!") -->
+        <div id="game-status" class="text-xl md:text-2xl font-bold text-center text-gray-700 h-8">
+            <!-- Los mensajes del juego se mostrarán aquí -->
+        </div>
+
+        <!-- Contenedor para las secciones de puntuación de ambos equipos -->
+        <div class="flex flex-col md:flex-row justify-around w-full space-y-8 md:space-y-0 md:space-x-8">
+            <!-- Sección de puntuación para "Nosotros" -->
+            <div class="bg-gradient-to-br from-green-500 to-green-600 p-6 rounded-2xl shadow-lg flex-1 flex flex-col items-center relative">
+                <!-- Etiqueta flotante para el equipo -->
+                <span class="absolute top-4 left-4 text-sm font-semibold text-white bg-green-700 px-3 py-1 rounded-full opacity-90">Nosotros</span>
+                <h2 class="text-3xl font-bold text-white mb-4 mt-8">Nosotros</h2>
+                <!-- Puntuación actual de Nosotros -->
+                <div id="nosotros-score" class="text-7xl md:text-8xl font-extrabold text-white mb-6">0</div>
+                <!-- Botones para agregar puntos a Nosotros -->
+                <div class="grid grid-cols-2 gap-4 w-full">
+                    <button class="score-btn text-green-700" data-team="nosotros" data-points="1">+1</button>
+                    <button class="score-btn text-green-700" data-team="nosotros" data-points="2">+2</button>
+                    <button class="score-btn text-green-700" data-team="nosotros" data-points="3">+3</button>
+                    <button class="score-btn text-green-700" data-team="nosotros" data-points="4">+4</button>
+                    <button class="score-btn text-green-700 col-span-2" data-team="nosotros" data-points="falta">Falta Envido</button>
+                    <button class="score-btn bg-red-500 text-white col-span-2" data-team="nosotros" data-points="-1">-1</button>
+                </div>
+            </div>
+
+            <!-- Sección de puntuación para "Ellos" -->
+            <div class="bg-gradient-to-br from-blue-500 to-blue-600 p-6 rounded-2xl shadow-lg flex-1 flex flex-col items-center relative">
+                <!-- Etiqueta flotante para el equipo -->
+                <span class="absolute top-4 right-4 text-sm font-semibold text-white bg-blue-700 px-3 py-1 rounded-full opacity-90">Ellos</span>
+                <h2 class="text-3xl font-bold text-white mb-4 mt-8">Ellos</h2>
+                <!-- Puntuación actual de Ellos -->
+                <div id="ellos-score" class="text-7xl md:text-8xl font-extrabold text-white mb-6">0</div>
+                <!-- Botones para agregar puntos a Ellos -->
+                <div class="grid grid-cols-2 gap-4 w-full">
+                    <button class="score-btn text-blue-700" data-team="ellos" data-points="1">+1</button>
+                    <button class="score-btn text-blue-700" data-team="ellos" data-points="2">+2</button>
+                    <button class="score-btn text-blue-700" data-team="ellos" data-points="3">+3</button>
+                    <button class="score-btn text-blue-700" data-team="ellos" data-points="4">+4</button>
+                    <button class="score-btn text-blue-700 col-span-2" data-team="ellos" data-points="falta">Falta Envido</button>
+                    <button class="score-btn bg-red-500 text-white col-span-2" data-team="ellos" data-points="-1">-1</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Botón para reiniciar el juego -->
+        <button id="reset-btn" class="mt-8 bg-purple-600 text-white font-bold py-4 px-8 rounded-full shadow-lg hover:bg-purple-700 transition duration-300 transform hover:scale-105 text-xl">Reiniciar Juego</button>
+    </div>
+
+    <script>
+        // Obtiene referencias a los elementos del DOM
+        const NOSOTROS_SCORE_EL = document.getElementById('nosotros-score');
+        const ELLOS_SCORE_EL = document.getElementById('ellos-score');
+        const GAME_STATUS_EL = document.getElementById('game-status');
+        const RESET_BTN = document.getElementById('reset-btn');
+        const SCORE_BUTTONS = document.querySelectorAll('.score-btn');
+
+        // Variables para almacenar las puntuaciones de cada equipo
+        let nosotrosScore = 0;
+        let ellosScore = 0;
+        const TARGET_SCORE = 30; // El Truco se juega tradicionalmente a 30 puntos
+
+        // Función para actualizar la visualización de las puntuaciones
+        function updateDisplay() {
+            NOSOTROS_SCORE_EL.textContent = nosotrosScore;
+            ELLOS_SCORE_EL.textContent = ellosScore;
+        }
+
+        // Función para verificar si hay un ganador
+        function checkWinner() {
+            if (nosotrosScore >= TARGET_SCORE) {
+                GAME_STATUS_EL.textContent = '¡Nosotros ganaron el partido!';
+                GAME_STATUS_EL.classList.add('text-green-700'); // Color para el ganador
+                disableScoreButtons(); // Deshabilita los botones al finalizar el juego
+            } else if (ellosScore >= TARGET_SCORE) {
+                GAME_STATUS_EL.textContent = '¡Ellos ganaron el partido!';
+                GAME_STATUS_EL.classList.add('text-blue-700'); // Color para el ganador
+                disableScoreButtons(); // Deshabilita los botones al finalizar el juego
+            } else {
+                GAME_STATUS_EL.textContent = ''; // Limpia el mensaje si no hay ganador
+                GAME_STATUS_EL.classList.remove('text-green-700', 'text-blue-700'); // Elimina los colores de ganador
+            }
+        }
+
+        // Función para deshabilitar todos los botones de puntuación
+        function disableScoreButtons() {
+            SCORE_BUTTONS.forEach(button => {
+                button.disabled = true;
+                button.classList.add('opacity-50', 'cursor-not-allowed');
+            });
+        }
+
+        // Función para habilitar todos los botones de puntuación
+        function enableScoreButtons() {
+            SCORE_BUTTONS.forEach(button => {
+                button.disabled = false;
+                button.classList.remove('opacity-50', 'cursor-not-allowed');
+            });
+        }
+
+        // Agrega un "event listener" a cada botón de puntuación
+        SCORE_BUTTONS.forEach(button => {
+            button.addEventListener('click', (event) => {
+                const team = event.target.dataset.team; // Obtiene el equipo ("nosotros" o "ellos")
+                const points = event.target.dataset.points; // Obtiene los puntos a sumar (o "falta" o "-1")
+
+                if (team === 'nosotros') {
+                    if (points === 'falta') {
+                        // Si es "Falta Envido", suma los puntos necesarios para llegar al TARGET_SCORE
+                        nosotrosScore += (TARGET_SCORE - ellosScore);
+                    } else if (points === '-1') {
+                        // Si es -1, resta un punto, asegurándose de que la puntuación no baje de 0
+                        nosotrosScore = Math.max(0, nosotrosScore - 1);
+                    } else {
+                        // Suma los puntos normales
+                        nosotrosScore += parseInt(points);
+                    }
+                } else if (team === 'ellos') {
+                    if (points === 'falta') {
+                        // Lógica para "Falta Envido" para el equipo "ellos"
+                        ellosScore += (TARGET_SCORE - nosotrosScore);
+                    } else if (points === '-1') {
+                        // Lógica para restar un punto para el equipo "ellos"
+                        ellosScore = Math.max(0, ellosScore - 1);
+                    } else {
+                        // Suma los puntos normales para el equipo "ellos"
+                        ellosScore += parseInt(points);
+                    }
+                }
+                updateDisplay(); // Actualiza la pantalla después de cada cambio
+                checkWinner(); // Verifica si hay un ganador
+            });
+        });
+
+        // Agrega un "event listener" al botón de reinicio
+        RESET_BTN.addEventListener('click', () => {
+            nosotrosScore = 0; // Reinicia la puntuación de nosotros
+            ellosScore = 0; // Reinicia la puntuación de ellos
+            updateDisplay(); // Actualiza la pantalla
+            GAME_STATUS_EL.textContent = ''; // Limpia el mensaje de estado del juego
+            GAME_STATUS_EL.classList.remove('text-green-700', 'text-blue-700'); // Limpia los colores de ganador
+            enableScoreButtons(); // Vuelve a habilitar los botones
+        });
+
+        // Actualización inicial de la pantalla al cargar la página
+        updateDisplay();
+    </script>
+</body>
+</html>
