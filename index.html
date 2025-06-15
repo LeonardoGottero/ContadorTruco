@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Contador de Truco</title>
+    <link rel="shortcut icon" href="favicon.png">
     <!-- Incluye Tailwind CSS para un diseño moderno y responsivo -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Importa la fuente 'Inter' de Google Fonts para una mejor tipografía -->
@@ -38,6 +39,16 @@
     <!-- Contenedor principal de la aplicación -->
     <div class="bg-white rounded-3xl shadow-2xl p-6 md:p-10 w-full max-w-4xl flex flex-col items-center space-y-8">
         <h1 class="text-4xl md:text-5xl font-extrabold text-gray-800 mb-4 text-center">Contador de Truco Argentino</h1>
+
+        <!-- Selector de puntos objetivo -->
+        <div class="flex items-center space-x-4 mb-4">
+            <label for="target-score-select" class="text-lg font-semibold text-gray-700">Puntos para ganar:</label>
+            <select id="target-score-select" class="p-2 rounded-lg border-2 border-gray-300 focus:outline-none focus:border-purple-500 text-lg font-medium">
+                <option value="15">15 Puntos</option>
+                <option value="24">24 Puntos</option>
+                <option value="30" selected>30 Puntos</option>
+            </select>
+        </div>
 
         <!-- Área para mostrar mensajes de estado del juego (ej. "¡Nosotros ganaron!") -->
         <div id="game-status" class="text-xl md:text-2xl font-bold text-center text-gray-700 h-8">
@@ -94,11 +105,12 @@
         const GAME_STATUS_EL = document.getElementById('game-status');
         const RESET_BTN = document.getElementById('reset-btn');
         const SCORE_BUTTONS = document.querySelectorAll('.score-btn');
+        const TARGET_SCORE_SELECT = document.getElementById('target-score-select');
 
         // Variables para almacenar las puntuaciones de cada equipo
         let nosotrosScore = 0;
         let ellosScore = 0;
-        const TARGET_SCORE = 30; // El Truco se juega tradicionalmente a 30 puntos
+        let targetScore = parseInt(TARGET_SCORE_SELECT.value); // Inicializa con el valor por defecto del selector
 
         // Función para actualizar la visualización de las puntuaciones
         function updateDisplay() {
@@ -108,11 +120,11 @@
 
         // Función para verificar si hay un ganador
         function checkWinner() {
-            if (nosotrosScore >= TARGET_SCORE) {
+            if (nosotrosScore >= targetScore) {
                 GAME_STATUS_EL.textContent = '¡Nosotros ganaron el partido!';
                 GAME_STATUS_EL.classList.add('text-green-700'); // Color para el ganador
                 disableScoreButtons(); // Deshabilita los botones al finalizar el juego
-            } else if (ellosScore >= TARGET_SCORE) {
+            } else if (ellosScore >= targetScore) {
                 GAME_STATUS_EL.textContent = '¡Ellos ganaron el partido!';
                 GAME_STATUS_EL.classList.add('text-blue-700'); // Color para el ganador
                 disableScoreButtons(); // Deshabilita los botones al finalizar el juego
@@ -138,6 +150,16 @@
             });
         }
 
+        // Función para reiniciar el juego completamente (incluyendo la puntuación objetivo si se cambia)
+        function resetGame() {
+            nosotrosScore = 0; // Reinicia la puntuación de nosotros
+            ellosScore = 0; // Reinicia la puntuación de ellos
+            updateDisplay(); // Actualiza la pantalla
+            GAME_STATUS_EL.textContent = ''; // Limpia el mensaje de estado del juego
+            GAME_STATUS_EL.classList.remove('text-green-700', 'text-blue-700'); // Limpia los colores de ganador
+            enableScoreButtons(); // Vuelve a habilitar los botones
+        }
+
         // Agrega un "event listener" a cada botón de puntuación
         SCORE_BUTTONS.forEach(button => {
             button.addEventListener('click', (event) => {
@@ -146,8 +168,8 @@
 
                 if (team === 'nosotros') {
                     if (points === 'falta') {
-                        // Si es "Falta Envido", suma los puntos necesarios para llegar al TARGET_SCORE
-                        nosotrosScore += (TARGET_SCORE - ellosScore);
+                        // Si es "Falta Envido", suma los puntos necesarios para llegar al targetScore
+                        nosotrosScore += (targetScore - ellosScore);
                     } else if (points === '-1') {
                         // Si es -1, resta un punto, asegurándose de que la puntuación no baje de 0
                         nosotrosScore = Math.max(0, nosotrosScore - 1);
@@ -158,7 +180,7 @@
                 } else if (team === 'ellos') {
                     if (points === 'falta') {
                         // Lógica para "Falta Envido" para el equipo "ellos"
-                        ellosScore += (TARGET_SCORE - nosotrosScore);
+                        ellosScore += (targetScore - nosotrosScore);
                     } else if (points === '-1') {
                         // Lógica para restar un punto para el equipo "ellos"
                         ellosScore = Math.max(0, ellosScore - 1);
@@ -173,13 +195,12 @@
         });
 
         // Agrega un "event listener" al botón de reinicio
-        RESET_BTN.addEventListener('click', () => {
-            nosotrosScore = 0; // Reinicia la puntuación de nosotros
-            ellosScore = 0; // Reinicia la puntuación de ellos
-            updateDisplay(); // Actualiza la pantalla
-            GAME_STATUS_EL.textContent = ''; // Limpia el mensaje de estado del juego
-            GAME_STATUS_EL.classList.remove('text-green-700', 'text-blue-700'); // Limpia los colores de ganador
-            enableScoreButtons(); // Vuelve a habilitar los botones
+        RESET_BTN.addEventListener('click', resetGame);
+
+        // Agrega un "event listener" al selector de puntos objetivo
+        TARGET_SCORE_SELECT.addEventListener('change', (event) => {
+            targetScore = parseInt(event.target.value); // Actualiza el targetScore al cambiar el selector
+            resetGame(); // Reinicia el juego cuando se cambia el targetScore
         });
 
         // Actualización inicial de la pantalla al cargar la página
